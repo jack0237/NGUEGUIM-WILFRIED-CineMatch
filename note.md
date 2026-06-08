@@ -19,7 +19,5 @@ git commit -m "closes #1, closes #31 - setup project architecture and theme toke
 Sur une branche feature (pas main) :
 Le mot-clé ne ferme l'issue qu'au moment du merge dans main, pas au push. C'est le comportement recommandé si tu travailles avec des branches.
 
-Format recommandé pour ce projet :
-
 
 git commit -m "closes #N - description courte de ce qui a été fait"
