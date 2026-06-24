@@ -82,7 +82,7 @@ export function SwipeCard({ movie, translateX, translateY, topCardOpacity, bgSwi
   useLayoutEffect(() => {
     if (isTop && !wasTopRef.current) {
       promoteAnim.value = 0;
-      promoteAnim.value = withSpring(1, { damping: 16, stiffness: 180 });
+      promoteAnim.value = withSpring(1, { damping: 24, stiffness: 180 });
     } else if (!isTop) {
       promoteAnim.value = 0;
     }

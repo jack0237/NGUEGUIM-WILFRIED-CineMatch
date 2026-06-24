@@ -170,14 +170,14 @@ export function FilterSheet({
 
   useEffect(() => {
     if (visible) {
-      sheetAnim.value   = withSpring(0, { damping: 22, stiffness: 200 });
+      sheetAnim.value   = withSpring(0, { damping: 30, stiffness: 200, overshootClamping: true });
       backdropAnim.value = withTiming(1, { duration: 250 });
     }
   }, [visible]);
 
   function close() {
     backdropAnim.value = withTiming(0, { duration: 200 });
-    sheetAnim.value    = withSpring(SHEET_H, { damping: 22, stiffness: 200 }, finished => {
+    sheetAnim.value    = withSpring(SHEET_H, { damping: 30, stiffness: 200, overshootClamping: true }, finished => {
       if (finished) runOnJS(onClose)();
     });
   }

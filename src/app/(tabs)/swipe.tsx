@@ -197,7 +197,7 @@ export default function SwipeScreen() {
             translateX.value = 0;
             translateY.value = 0;
             // Spring bgSwipeProgress back to 0 so background cards ease to rest.
-            bgSwipeProgress.value = withSpring(0, { damping: 20, stiffness: 200 });
+            bgSwipeProgress.value = withSpring(0, { damping: 26, stiffness: 200, overshootClamping: true });
             runOnJS(handleSwipe)('like');
           }
         });
@@ -208,14 +208,14 @@ export default function SwipeScreen() {
             topCardOpacity.value = 0;
             translateX.value = 0;
             translateY.value = 0;
-            bgSwipeProgress.value = withSpring(0, { damping: 20, stiffness: 200 });
+            bgSwipeProgress.value = withSpring(0, { damping: 26, stiffness: 200, overshootClamping: true });
             runOnJS(handleSwipe)('dislike');
           }
         });
       } else {
-        translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
-        translateY.value = withSpring(0, { damping: 20, stiffness: 200 });
-        bgSwipeProgress.value = withSpring(0, { damping: 20, stiffness: 200 });
+        translateX.value = withSpring(0, { damping: 26, stiffness: 200 });
+        translateY.value = withSpring(0, { damping: 26, stiffness: 200 });
+        bgSwipeProgress.value = withSpring(0, { damping: 26, stiffness: 200, overshootClamping: true });
       }
     });
 
@@ -228,7 +228,7 @@ export default function SwipeScreen() {
         topCardOpacity.value = 0;
         translateX.value = 0;
         translateY.value = 0;
-        bgSwipeProgress.value = withSpring(0, { damping: 20, stiffness: 200 });
+        bgSwipeProgress.value = withSpring(0, { damping: 26, stiffness: 200, overshootClamping: true });
         runOnJS(handleSwipe)(action);
       }
     });

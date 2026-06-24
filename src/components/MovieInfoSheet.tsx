@@ -54,7 +54,7 @@ export function MovieInfoSheet({ movie, onClose }: Props) {
 
   useEffect(() => {
     if (movie) {
-      sheetY.value = withSpring(0, { damping: 18, stiffness: 160 });
+      sheetY.value = withSpring(0, { damping: 28, stiffness: 200, overshootClamping: true });
       backdropOpacity.value = withTiming(1, { duration: 280 });
       setRuntime(null);
       setCast([]);
@@ -100,7 +100,7 @@ export function MovieInfoSheet({ movie, onClose }: Props) {
         sheetY.value = withTiming(SHEET_HEIGHT, { duration: 280 }, () => runOnJS(close)());
         backdropOpacity.value = withTiming(0, { duration: 220 });
       } else {
-        sheetY.value = withSpring(0, { damping: 18, stiffness: 160 });
+        sheetY.value = withSpring(0, { damping: 28, stiffness: 200, overshootClamping: true });
       }
     });
 
