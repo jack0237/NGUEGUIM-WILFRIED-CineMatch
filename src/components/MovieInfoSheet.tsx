@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { setStatusBarHidden } from 'expo-status-bar';
 import {
   Dimensions,
   Linking,
   Modal,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -54,6 +56,7 @@ export function MovieInfoSheet({ movie, onClose }: Props) {
 
   useEffect(() => {
     if (movie) {
+      setStatusBarHidden(true, 'fade');
       sheetY.value = withSpring(0, { damping: 28, stiffness: 200, overshootClamping: true });
       backdropOpacity.value = withTiming(1, { duration: 280 });
       setRuntime(null);
@@ -63,6 +66,9 @@ export function MovieInfoSheet({ movie, onClose }: Props) {
       fetchData(movie.id);
     }
   }, [movie?.id]);
+
+  // Restore status bar if component unmounts while sheet is open
+  useEffect(() => () => { setStatusBarHidden(false, 'fade'); }, []);
 
   async function fetchData(id: number) {
     const [detailsRes, creditsRes, videosRes] = await Promise.allSettled([
@@ -86,9 +92,12 @@ export function MovieInfoSheet({ movie, onClose }: Props) {
   }
 
   function close() {
+    setStatusBarHidden(false, 'fade');
     sheetY.value = withTiming(SHEET_HEIGHT, { duration: 300 }, () => runOnJS(onClose)());
     backdropOpacity.value = withTiming(0, { duration: 250 });
   }
+
+  const restoreStatusBar = () => setStatusBarHidden(false, 'fade');
 
   // Drag handle gesture — drag down to dismiss
   const dragGesture = Gesture.Pan()
@@ -97,6 +106,7 @@ export function MovieInfoSheet({ movie, onClose }: Props) {
     })
     .onEnd((e) => {
       if (e.translationY > DISMISS_THRESHOLD) {
+        runOnJS(restoreStatusBar)();
         sheetY.value = withTiming(SHEET_HEIGHT, { duration: 280 }, () => runOnJS(close)());
         backdropOpacity.value = withTiming(0, { duration: 220 });
       } else {
@@ -110,6 +120,18 @@ export function MovieInfoSheet({ movie, onClose }: Props) {
   const backdropAnimStyle = useAnimatedStyle(() => ({
     opacity: backdropOpacity.value,
   }));
+
+  async function shareMovie() {
+    if (!movie) return;
+    const year = formatYear(movie.release_date);
+    const rating = formatRating(movie.vote_average);
+    const url = `https://www.themoviedb.org/movie/${movie.id}`;
+    await Share.share({
+      title: movie.title,
+      message: `${movie.title}${year ? ` (${year})` : ''} — ${rating}/10 sur TMDB\n\n${movie.overview ?? ''}\n\n${url}`,
+      url,
+    });
+  }
 
   if (!movie) return null;
 
@@ -140,7 +162,7 @@ export function MovieInfoSheet({ movie, onClose }: Props) {
           <Pressable style={styles.topBtn} onPress={close}>
             <Ionicons name="chevron-back" size={24} color="rgba(203,195,215,0.85)" />
           </Pressable>
-          <Pressable style={styles.topBtn}>
+          <Pressable style={styles.topBtn} onPress={shareMovie}>
             <Ionicons name="share-outline" size={22} color="rgba(203,195,215,0.85)" />
           </Pressable>
         </View>
