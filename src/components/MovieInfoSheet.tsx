@@ -20,6 +20,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Radius, Spacing } from '@/constants/theme';
 import { useColors } from '@/hooks/use-theme';
 import type { CastMember, Movie } from '@/types/tmdb';
@@ -44,6 +45,7 @@ interface Props {
 
 export function MovieInfoSheet({ movie, onClose }: Props) {
   const C = useColors();
+  const insets = useSafeAreaInsets();
   const [runtime, setRuntime] = useState<number | null>(null);
   const [cast, setCast] = useState<CastMember[]>([]);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
@@ -97,7 +99,7 @@ export function MovieInfoSheet({ movie, onClose }: Props) {
     })
     .onEnd((e) => {
       if (e.translationY > DISMISS_THRESHOLD) {
-        sheetY.value = withTiming(SHEET_HEIGHT, { duration: 280 }, () => runOnJS(close)());
+        sheetY.value = withTiming(SHEET_HEIGHT, { duration: 280 }, () => runOnJS(onClose)());
         backdropOpacity.value = withTiming(0, { duration: 220 });
       } else {
         sheetY.value = withSpring(0, { damping: 28, stiffness: 200, overshootClamping: true });
@@ -136,14 +138,14 @@ export function MovieInfoSheet({ movie, onClose }: Props) {
         </Animated.View>
 
         {/* ── Top bar ──────────────────────────────────────────────────── */}
-        <View style={styles.topBar}>
+        <Animated.View style={[styles.topBar, { paddingTop: insets.top + 8, height: 56 + insets.top }, backdropAnimStyle]}>
           <Pressable style={styles.topBtn} onPress={close}>
             <Ionicons name="chevron-back" size={24} color="rgba(203,195,215,0.85)" />
           </Pressable>
           <Pressable style={styles.topBtn}>
             <Ionicons name="share-outline" size={22} color="rgba(203,195,215,0.85)" />
           </Pressable>
-        </View>
+        </Animated.View>
 
         {/* ── Sheet wrapper (overflow visible for trailer button) ──────── */}
         <Animated.View style={[styles.sheetWrapper, sheetAnimStyle]}>
@@ -264,14 +266,13 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 64,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     paddingHorizontal: 20,
+    paddingBottom: 8,
     zIndex: 50,
     backgroundColor: 'rgba(19,19,19,0.08)',
-    paddingTop: 16,
   },
   topBtn: {
     width: 40,
