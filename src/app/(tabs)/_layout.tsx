@@ -22,7 +22,7 @@ export default function TabsLayout() {
           paddingTop: 6,
         },
         tabBarActiveTintColor: C.primary,
-        tabBarInactiveTintColor: C.textDisabled,
+        tabBarInactiveTintColor: C.tabBarInactive,
         tabBarLabelStyle: {
           fontFamily: Fonts.semibold,
           fontSize: 10,
