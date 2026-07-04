@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Cinema, FontSize, Radius, Spacing } from '@/constants/theme';
+import { FontSize, Radius, Spacing } from '@/constants/theme';
 import { useColors } from '@/hooks/use-theme';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -53,13 +53,14 @@ export function Button({
         disabled={isDisabled}
         style={({ pressed }) => [
           styles.gradientWrap,
+          { shadowColor: C.gradientTo },
           isDisabled && styles.disabled,
           pressed && !isDisabled && styles.pressed,
           style,
         ]}
         {...rest}>
         <LinearGradient
-          colors={[Cinema.gradientFrom, Cinema.gradientTo]}
+          colors={[C.gradientFrom, C.gradientTo]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={styles.gradient}>
@@ -76,7 +77,7 @@ export function Button({
         styles.base,
         isGhost
           ? [styles.ghost, { borderColor: C.border }]
-          : styles.primary,
+          : { backgroundColor: C.gradientFrom },
         isDisabled && styles.disabled,
         pressed && !isDisabled && styles.pressed,
         style,
@@ -108,10 +109,6 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   pressed:  { opacity: 0.85 },
 
-  primary: {
-    backgroundColor: Cinema.gradientFrom,
-  },
-
   ghost: {
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -120,7 +117,6 @@ const styles = StyleSheet.create({
   gradientWrap: {
     borderRadius: Radius.pill,
     overflow: 'hidden',
-    shadowColor: Cinema.gradientTo,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 16,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   Pressable,
@@ -8,14 +8,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Swiper from 'react-native-deck-swiper';
 import Animated, {
   interpolate,
   interpolateColor,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { SwipeCard } from '@/components/SwipeCard';
@@ -34,15 +32,17 @@ import {
   type FilterState,
 } from '@/components/FilterSheet';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.35;
-const CARD_HEIGHT = Dimensions.get('window').height * 0.55;
+const CARD_H_MARGIN = Spacing.lg;
 const STACK_SIZE = 3;
 
 export default function SwipeScreen() {
   const C = useColors();
   const { user } = useAuth();
+  // deck only grows (pagination appends); cardIndex tracks the swiper's position.
   const [deck, setDeck] = useState<Movie[]>([]);
+  const [cardIndex, setCardIndex] = useState(0);
   const [sheetMovie, setSheetMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -53,28 +53,26 @@ export default function SwipeScreen() {
   // Use a ref so loadMovies (useCallback with empty deps) always reads the current filters
   const filtersRef = useRef<FilterState>(INITIAL_FILTER);
   const [appliedFilters, setAppliedFiltersState] = useState<FilterState>(INITIAL_FILTER);
+  const swiperRef = useRef<Swiper<Movie>>(null);
+  // Measured height of the deck area. react-native-deck-swiper sizes cards from
+  // Dimensions.get('window'), ignoring its container — so we feed it margins
+  // derived from this measurement to make the card fill the deck area exactly.
+  const [deckHeight, setDeckHeight] = useState(0);
 
   const hasActiveFilters =
     appliedFilters.genres.length > 0 ||
     appliedFilters.minScore > 0 ||
     appliedFilters.era !== null;
 
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-  // topCardOpacity: set to 0 on the UI thread (withTiming callback) before translateX resets,
-  // so the departing card cannot flash back to center. Restored to 1 after deck commit.
-  const topCardOpacity = useSharedValue(1);
-  // bgSwipeProgress: drives background-card scale independently from translateX.
-  // Animated with a spring on swipe exit so background cards ease back to rest
-  // instead of snapping when translateX jumps from SCREEN_WIDTH*1.5 back to 0.
-  const bgSwipeProgress = useSharedValue(0);
-
+  // gestureX mirrors the swiper's horizontal drag (via onSwiping) to drive
+  // the like/nope button highlights while dragging.
+  const gestureX = useSharedValue(0);
   const isLikePressed = useSharedValue(0);
   const isNopePressed = useSharedValue(0);
 
   // ── Like button animation ──────────────────────────────────────────────────
   const likeButtonStyle = useAnimatedStyle(() => {
-    const swipeProgress = interpolate(translateX.value, [0, SWIPE_THRESHOLD], [0, 1], 'clamp');
+    const swipeProgress = interpolate(gestureX.value, [0, SWIPE_THRESHOLD], [0, 1], 'clamp');
     const progress = Math.max(swipeProgress, isLikePressed.value);
     return {
       transform: [{ scale: interpolate(progress, [0, 1], [1, 1.15]) }],
@@ -84,13 +82,13 @@ export default function SwipeScreen() {
   });
 
   const likeIconStyle = useAnimatedStyle(() => {
-    const swipeProgress = interpolate(translateX.value, [0, SWIPE_THRESHOLD * 0.6], [0, 1], 'clamp');
+    const swipeProgress = interpolate(gestureX.value, [0, SWIPE_THRESHOLD * 0.6], [0, 1], 'clamp');
     return { opacity: Math.max(swipeProgress, isLikePressed.value) };
   });
 
   // ── Nope button animation ──────────────────────────────────────────────────
   const nopeButtonStyle = useAnimatedStyle(() => {
-    const swipeProgress = interpolate(translateX.value, [-SWIPE_THRESHOLD, 0], [1, 0], 'clamp');
+    const swipeProgress = interpolate(gestureX.value, [-SWIPE_THRESHOLD, 0], [1, 0], 'clamp');
     const progress = Math.max(swipeProgress, isNopePressed.value);
     return {
       transform: [{ scale: interpolate(progress, [0, 1], [1, 1.15]) }],
@@ -100,7 +98,7 @@ export default function SwipeScreen() {
   });
 
   const nopeIconStyle = useAnimatedStyle(() => {
-    const swipeProgress = interpolate(translateX.value, [-SWIPE_THRESHOLD * 0.6, 0], [1, 0], 'clamp');
+    const swipeProgress = interpolate(gestureX.value, [-SWIPE_THRESHOLD * 0.6, 0], [1, 0], 'clamp');
     return { opacity: Math.max(swipeProgress, isNopePressed.value) };
   });
 
@@ -156,83 +154,21 @@ export default function SwipeScreen() {
     init();
   }, [user, loadMovies]);
 
+  const remaining = deck.length - cardIndex;
   useEffect(() => {
-    if (!loading && deck.length <= STACK_SIZE + 6) loadMovies();
-  }, [deck.length, loading, loadMovies]);
+    if (!loading && remaining <= STACK_SIZE + 6) loadMovies();
+  }, [remaining, loading, loadMovies]);
 
-  // ── Restore top card visibility after React commits the deck change ──────────
-  // translateX/Y are already reset on the UI thread (inside the withTiming callback),
-  // so we only need to make the new top card visible here.
-  useLayoutEffect(() => {
-    topCardOpacity.value = 1;
-  }, [deck]);
-
-  // ── Swipe action ───────────────────────────────────────────────────────────
-  const handleSwipe = useCallback(
-    (action: 'like' | 'dislike') => {
-      const movie = deck[0];
+  // ── Swipe persistence ──────────────────────────────────────────────────────
+  const persistSwipe = useCallback(
+    (index: number, action: 'like' | 'dislike') => {
+      const movie = deck[index];
       if (!movie || !user) return;
       swipedIds.current.add(movie.id);
-      setDeck((prev) => prev.slice(1));
       saveSwipe(user.id, movie, action).catch(() => {});
     },
     [deck, user],
   );
-
-  // ── Pan gesture ────────────────────────────────────────────────────────────
-  const gesture = Gesture.Pan()
-    .onUpdate((e) => {
-      translateX.value = e.translationX;
-      translateY.value = e.translationY * 0.3;
-      bgSwipeProgress.value = Math.min(Math.abs(e.translationX) / 150, 1);
-    })
-    .onEnd((e) => {
-      if (e.translationX > SWIPE_THRESHOLD) {
-        // Keep bgSwipeProgress in sync with the exit animation
-        bgSwipeProgress.value = withTiming(1, { duration: 280 });
-        translateX.value = withTiming(SCREEN_WIDTH * 1.5, { duration: 280 }, (finished) => {
-          if (finished) {
-            // UI thread — synchronous. Hide card then reset position.
-            topCardOpacity.value = 0;
-            translateX.value = 0;
-            translateY.value = 0;
-            // Spring bgSwipeProgress back to 0 so background cards ease to rest.
-            bgSwipeProgress.value = withSpring(0, { damping: 26, stiffness: 200, overshootClamping: true });
-            runOnJS(handleSwipe)('like');
-          }
-        });
-      } else if (e.translationX < -SWIPE_THRESHOLD) {
-        bgSwipeProgress.value = withTiming(1, { duration: 280 });
-        translateX.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 280 }, (finished) => {
-          if (finished) {
-            topCardOpacity.value = 0;
-            translateX.value = 0;
-            translateY.value = 0;
-            bgSwipeProgress.value = withSpring(0, { damping: 26, stiffness: 200, overshootClamping: true });
-            runOnJS(handleSwipe)('dislike');
-          }
-        });
-      } else {
-        translateX.value = withSpring(0, { damping: 26, stiffness: 200 });
-        translateY.value = withSpring(0, { damping: 26, stiffness: 200 });
-        bgSwipeProgress.value = withSpring(0, { damping: 26, stiffness: 200, overshootClamping: true });
-      }
-    });
-
-  // ── Button press swipe ─────────────────────────────────────────────────────
-  function pressSwipe(action: 'like' | 'dislike') {
-    const direction = action === 'like' ? 1 : -1;
-    bgSwipeProgress.value = withTiming(1, { duration: 280 });
-    translateX.value = withTiming(direction * SCREEN_WIDTH * 1.5, { duration: 280 }, (finished) => {
-      if (finished) {
-        topCardOpacity.value = 0;
-        translateX.value = 0;
-        translateY.value = 0;
-        bgSwipeProgress.value = withSpring(0, { damping: 26, stiffness: 200, overshootClamping: true });
-        runOnJS(handleSwipe)(action);
-      }
-    });
-  }
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) return <SwipeCardSkeleton />;
@@ -251,7 +187,7 @@ export default function SwipeScreen() {
     );
   }
 
-  if (deck.length === 0) {
+  if (remaining <= 0) {
     return (
       <SafeAreaView style={[styles.centered, { backgroundColor: C.bg }]}>
         <Text style={styles.emptyEmoji}>🎬</Text>
@@ -260,6 +196,8 @@ export default function SwipeScreen() {
       </SafeAreaView>
     );
   }
+
+  const topMovie = deck[cardIndex];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: C.bg }]}>
@@ -274,22 +212,91 @@ export default function SwipeScreen() {
         </Pressable>
       </View>
 
-      {/* Card stack */}
-      <View style={styles.deckContainer}>
-        {deck
-          .slice(0, STACK_SIZE)
-          .reverse()
-          .map((movie, revIdx) => {
-            const idx = STACK_SIZE - 1 - revIdx;
-            const isTop = idx === 0;
-            return isTop ? (
-              <GestureDetector key={movie.id} gesture={gesture}>
-                <SwipeCard movie={movie} translateX={translateX} translateY={translateY} topCardOpacity={topCardOpacity} bgSwipeProgress={bgSwipeProgress} isTop index={0} />
-              </GestureDetector>
-            ) : (
-              <SwipeCard key={movie.id} movie={movie} translateX={translateX} translateY={translateY} topCardOpacity={topCardOpacity} bgSwipeProgress={bgSwipeProgress} isTop={false} index={idx} />
-            );
-          })}
+      {/* Card stack — react-native-deck-swiper owns gestures, exit animations
+          and the stack. It advances an internal index over a stable cards array,
+          so a swiped card is never recycled with new content (no glitch). */}
+      <View style={styles.deckContainer} onLayout={(e) => setDeckHeight(e.nativeEvent.layout.height)}>
+        {deckHeight > 0 && (
+        <Swiper
+          ref={swiperRef}
+          cards={deck}
+          cardIndex={cardIndex}
+          keyExtractor={(movie) => String(movie.id)}
+          renderCard={(movie) => (movie ? <SwipeCard movie={movie} /> : null)}
+          onSwiping={(x) => { gestureX.value = x; }}
+          onSwipedAborted={() => { gestureX.value = withTiming(0, { duration: 200 }); }}
+          onSwiped={(index) => {
+            gestureX.value = withTiming(0, { duration: 200 });
+            setCardIndex(index + 1);
+          }}
+          onSwipedRight={(index) => persistSwipe(index, 'like')}
+          onSwipedLeft={(index) => persistSwipe(index, 'dislike')}
+          stackSize={STACK_SIZE}
+          stackSeparation={10}
+          stackScale={4}
+          verticalSwipe={false}
+          horizontalThreshold={SWIPE_THRESHOLD}
+          backgroundColor="transparent"
+          cardHorizontalMargin={CARD_H_MARGIN}
+          cardVerticalMargin={0}
+          marginTop={0}
+          marginBottom={SCREEN_HEIGHT - deckHeight}
+          containerStyle={styles.swiperContainer}
+          animateOverlayLabelsOpacity
+          overlayLabels={{
+            left: {
+              title: 'NOPE',
+              style: {
+                label: {
+                  borderWidth: 4,
+                  borderColor: C.nope,
+                  color: C.nope,
+                  borderRadius: Radius.md,
+                  paddingHorizontal: 18,
+                  paddingVertical: 8,
+                  fontSize: 36,
+                  fontWeight: '800',
+                  letterSpacing: 2,
+                  backgroundColor: 'rgba(13,13,13,0.5)',
+                },
+                wrapper: {
+                  flexDirection: 'column',
+                  alignItems: 'flex-end',
+                  justifyContent: 'center',
+                  flex: 1,
+                  paddingRight: Spacing.xl,
+                  transform: [{ rotate: '12deg' }],
+                },
+              },
+            },
+            right: {
+              title: 'MATCH!',
+              style: {
+                label: {
+                  borderWidth: 4,
+                  borderColor: C.like,
+                  color: C.like,
+                  borderRadius: Radius.md,
+                  paddingHorizontal: 18,
+                  paddingVertical: 8,
+                  fontSize: 36,
+                  fontWeight: '800',
+                  letterSpacing: 2,
+                  backgroundColor: 'rgba(13,13,13,0.5)',
+                },
+                wrapper: {
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  justifyContent: 'center',
+                  flex: 1,
+                  paddingLeft: Spacing.xl,
+                  transform: [{ rotate: '-12deg' }],
+                },
+              },
+            },
+          }}
+        />
+        )}
       </View>
 
       {/* Filter sheet */}
@@ -302,6 +309,7 @@ export default function SwipeScreen() {
           setAppliedFiltersState(state);
           page.current = 1;
           setDeck([]);
+          setCardIndex(0);
           loadMovies();
         }}
       />
@@ -310,7 +318,7 @@ export default function SwipeScreen() {
       <View style={styles.actions}>
         {/* Nope */}
         <Pressable
-          onPress={() => pressSwipe('dislike')}
+          onPress={() => swiperRef.current?.swipeLeft()}
           onPressIn={() => { isNopePressed.value = withTiming(1, { duration: 120 }); }}
           onPressOut={() => { isNopePressed.value = withTiming(0, { duration: 200 }); }}>
           <Animated.View style={[styles.actionBtn, styles.actionBtnLg, nopeButtonStyle]}>
@@ -325,15 +333,14 @@ export default function SwipeScreen() {
         <Pressable
           style={[styles.actionBtnInfo, { backgroundColor: C.surfaceElevated, borderColor: C.border }]}
           onPress={() => {
-            const movie = deck[0];
-            if (deck[0]) setSheetMovie(deck[0]);
+            if (topMovie) setSheetMovie(topMovie);
           }}>
           <Ionicons name="information-circle-outline" size={22} color={C.textSecondary} />
         </Pressable>
 
         {/* Like */}
         <Pressable
-          onPress={() => pressSwipe('like')}
+          onPress={() => swiperRef.current?.swipeRight()}
           onPressIn={() => { isLikePressed.value = withTiming(1, { duration: 120 }); }}
           onPressOut={() => { isLikePressed.value = withTiming(0, { duration: 200 }); }}>
           <Animated.View style={[styles.actionBtn, styles.actionBtnLg, likeButtonStyle]}>
@@ -377,9 +384,10 @@ const styles = StyleSheet.create({
 
   deckContainer: {
     flex: 1,
-    marginHorizontal: Spacing.lg,
     marginBottom: Spacing.md,
-    height: CARD_HEIGHT,
+  },
+  swiperContainer: {
+    backgroundColor: 'transparent',
   },
 
   actions: {
@@ -425,7 +433,6 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     paddingHorizontal: Spacing['2xl'],
   },
-  loadingText: { fontSize: FontSize.sm },
   errorText: { fontSize: FontSize.base, textAlign: 'center' },
   retryBtn: {
     marginTop: Spacing.sm,

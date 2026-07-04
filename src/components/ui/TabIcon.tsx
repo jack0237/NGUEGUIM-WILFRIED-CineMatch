@@ -1,6 +1,6 @@
 import { View, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Cinema } from '@/constants/theme';
+import { useColors } from '@/hooks/use-theme';
 
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -17,17 +17,11 @@ interface TabIconProps extends TabIconConfig {
   size?: number;
 }
 
-/**
- * Material 3-style tab icon with a pill indicator on the active state.
- * All tab screens should pass `tabBarIcon` using this component.
- *
- * Usage in _layout.tsx:
- *   tabBarIcon: tabIcon({ name: 'cards-outline', activeName: 'cards' })
- */
 export function TabIcon({ name, activeName, color, focused, size = 22 }: TabIconProps) {
+  const C = useColors();
   return (
     <View style={styles.wrapper}>
-      {focused && <View style={styles.pill} />}
+      {focused && <View style={[styles.pill, { backgroundColor: C.primaryDim }]} />}
       <MaterialCommunityIcons
         name={focused ? activeName : name}
         size={size}
@@ -54,6 +48,5 @@ const styles = StyleSheet.create({
   pill: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 15,
-    backgroundColor: Cinema.primaryDim,
   },
 });

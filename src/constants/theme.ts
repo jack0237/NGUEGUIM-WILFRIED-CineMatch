@@ -137,9 +137,9 @@ export const CinemaLight = {
   primaryLight:    '#9b6ee7',
   primaryDim:      'rgba(109,59,215,0.12)',
 
-  // Button gradient pair (same branding)
-  gradientFrom:    Stitch.primaryContainer,   // #a078ff
-  gradientTo:      Stitch.inversePrimary,     // #6d3bd7
+  // Button gradient pair — darker in light mode for white text readability (~6:1 contrast)
+  gradientFrom:    Stitch.inversePrimary,     // #6d3bd7
+  gradientTo:      '#4a27bd',                 // deeper purple
   onGradient:      '#FFFFFF',
 
   // Ratings
@@ -173,7 +173,7 @@ export const CinemaLight = {
   tabBar:         '#F5F5F7',
   tabBarBorder:   '#E5E5EA',
   tabBarActive:   Stitch.inversePrimary,  // #6d3bd7
-  tabBarInactive: '#8E8E93',
+  tabBarInactive: '#3C3C3E',
 } as const;
 
 export type CinemaPalette = typeof Cinema | typeof CinemaLight;
