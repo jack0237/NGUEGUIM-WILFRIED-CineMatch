@@ -1,4 +1,4 @@
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, type ColorValue } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/use-theme';
 
@@ -12,7 +12,7 @@ export interface TabIconConfig {
 }
 
 interface TabIconProps extends TabIconConfig {
-  color: string;
+  color: ColorValue;
   focused: boolean;
   size?: number;
 }
@@ -33,7 +33,7 @@ export function TabIcon({ name, activeName, color, focused, size = 22 }: TabIcon
 
 /** Factory to pass directly to Expo Router's `tabBarIcon` option */
 export function tabIcon(config: TabIconConfig) {
-  return ({ color, focused }: { color: string; focused: boolean }) => (
+  return ({ color, focused }: { color: ColorValue; focused: boolean }) => (
     <TabIcon {...config} color={color} focused={focused} />
   );
 }
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     height: 30,
   },
   pill: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 15,
   },
 });

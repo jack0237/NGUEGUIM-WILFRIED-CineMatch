@@ -48,6 +48,14 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
+        name="groups"
+        options={{
+          title: 'Groupes',
+          tabBarIcon: tabIcon({ name: 'account-group-outline', activeName: 'account-group' }),
+        }}
+      />
+
+      <Tabs.Screen
         name="search"
         options={{
           title: 'Recherche',

@@ -73,12 +73,12 @@ const styles = StyleSheet.create({
     height: CARD_HEIGHT,
   },
   bgCard2: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     transform: [{ scale: 0.9 }, { translateY: -20 }],
     opacity: 0.4,
   },
   bgCard1: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     transform: [{ scale: 0.95 }, { translateY: -10 }],
     opacity: 0.7,
   },

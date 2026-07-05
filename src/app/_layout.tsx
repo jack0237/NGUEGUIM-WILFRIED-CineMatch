@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import {
@@ -19,6 +19,8 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const auth = useAuthState();
   const scheme = useColorScheme();
+  const router = useRouter();
+  const segments = useSegments();
 
   const [fontsLoaded] = useFonts({
     'Sora-Light':     Sora_300Light,
@@ -33,6 +35,16 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, auth.isLoading]);
+
+  useEffect(() => {
+    if (auth.isLoading || !fontsLoaded) return;
+    const inAuthGroup = segments[0] === '(auth)';
+    if (!auth.session && !inAuthGroup) {
+      router.replace('/(auth)/login');
+    } else if (auth.session && inAuthGroup) {
+      router.replace('/(tabs)/swipe');
+    }
+  }, [auth.session, auth.isLoading, fontsLoaded, segments]);
 
   if (!fontsLoaded || auth.isLoading) return null;
 
@@ -54,6 +66,7 @@ export default function RootLayout() {
                 headerBackButtonDisplayMode: 'minimal',
               }}
             />
+            <Stack.Screen name="group/[id]" options={{ headerShown: false }} />
           </Stack>
         </ThemeProvider>
       </AuthContext.Provider>

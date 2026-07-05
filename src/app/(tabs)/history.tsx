@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   cardPressed: {},
   posterWrap: { width: 64, height: 96, flexShrink: 0, borderRadius: 8, overflow: 'hidden', backgroundColor: Stitch.surfaceContainerHigh },
   posterWrapPassed: { opacity: 0.7 },
-  posterGreyOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(150,150,150,0.25)' },
+  posterGreyOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(150,150,150,0.25)' },
   details: { flex: 1, minWidth: 0, gap: 6 },
   title: { fontFamily: Fonts.semibold, fontSize: FontSize.xl, lineHeight: 28 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
