@@ -212,6 +212,13 @@ export default function GroupSwipeScreen() {
           horizontalThreshold={SWIPE_THRESHOLD}
           backgroundColor="transparent"
           cardHorizontalMargin={CARD_H_MARGIN}
+          inputRotationRange={[-(SCREEN_WIDTH / 2), 0, SCREEN_WIDTH / 2]}
+          outputRotationRange={['-15deg', '0deg', '15deg']}
+          topCardResetAnimationFriction={7}
+          topCardResetAnimationTension={40}
+          stackAnimationFriction={7}
+          stackAnimationTension={40}
+          overlayOpacityHorizontalThreshold={SCREEN_WIDTH * 0.2}
           cardVerticalMargin={0}
           marginTop={0}
           marginBottom={SCREEN_HEIGHT - deckHeight}

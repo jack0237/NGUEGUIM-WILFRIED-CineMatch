@@ -6,6 +6,20 @@ Application mobile (iOS, Android) — Évaluation React Native M1, SUP de Vinci.
 
 ---
 
+## Télécharger l'app (Android)
+
+**Dernière version : [CineMatch v23](https://github.com/jack0237/NGUEGUIM-WILFRIED-CineMatch/releases/tag/v23)**
+
+[![Télécharger APK](https://img.shields.io/badge/Télécharger-APK%20Android-4CAF50?style=for-the-badge&logo=android)](https://github.com/jack0237/NGUEGUIM-WILFRIED-CineMatch/releases/download/v23/build-1783260571378.apk)
+
+Scanne ce QR Code pour accéder à la release :
+
+![QR Code CineMatch v23](https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://github.com/jack0237/NGUEGUIM-WILFRIED-CineMatch/releases/tag/v23)
+
+> Ouvre le lien dans un navigateur Android → télécharge le `.apk` → installe (autoriser sources inconnues si demandé).
+
+---
+
 ## Team
 
 | Nom           | Rôle                          |
@@ -34,7 +48,8 @@ Application mobile (iOS, Android) — Évaluation React Native M1, SUP de Vinci.
 ### Bonus
 
 - [x] Système de filtres complet (genres, score TMDB, ère) via bottom sheet animé — Swipe + Recherche
-- [ ] Animation rotation de carte pendant le swipe (Reanimated)
+- [x] Animation rotation de carte pendant le swipe (±15°, spring physics via react-native-deck-swiper)
+- [x] **Group matching** — groupes d'amis, swipe secret par membre, révélation des films likés par tous
 
 ---
 
@@ -96,6 +111,16 @@ EXPO_PUBLIC_TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p
 3. Copier **Project URL** → `EXPO_PUBLIC_SUPABASE_URL`
 4. Copier **anon public** key → `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 
+### 5. Appliquer les migrations Supabase
+
+Dans le **SQL Editor** de votre projet Supabase, exécuter le fichier :
+
+```text
+supabase/migrations/20260705000001_group_matching.sql
+```
+
+Ce script crée les tables `groups`, `group_members`, `group_swipes` avec RLS, et les fonctions RPC nécessaires à la feature de group matching.
+
 ### 5. Lancer l'app
 
 ```bash
@@ -114,7 +139,8 @@ Scanner le QR code avec **Expo Go** sur votre téléphone.
 src/
   app/
     (auth)/              # Écrans non authentifiés (login, register, forgot-password)
-    (tabs)/              # Tab navigator : swipe, matches, search, history, profile
+    (tabs)/              # Tab navigator : swipe, matches, groups, search, history, profile
+    group/[id]/          # Détail groupe + swipe secret de groupe
     movie/[id].tsx       # Fiche film (Stack, header transparent)
     _layout.tsx          # Root layout + auth guard + fonts
   components/
@@ -134,9 +160,10 @@ src/
     tmdb.ts              # getPopularMovies, discoverMovies, searchMovies, getMovieDetails...
     supabase.ts          # Client Supabase configuré
     swipe.ts             # saveSwipe, getLikedMovies, getAllSwipes
+    groups.ts            # createGroup, joinGroup, getMyGroups, getGroupMatches...
   types/
     tmdb.ts              # Movie, Genre, CastMember, Video...
-    supabase.ts          # Database, SwipeHistory, Profile
+    supabase.ts          # Database, SwipeHistory, Profile, Group, GroupSwipe
   utils/
     format.ts            # posterUrl, backdropUrl, profileUrl, formatRuntime, formatYear
 assets/                  # Images et icônes
@@ -160,9 +187,9 @@ assets/                  # Images et icônes
 
 ## Progression
 
-**31 / 38 issues terminées** — voir [ROADMAP.md](./ROADMAP.md) pour le détail par bloc.
+**35 / 38 issues terminées** — voir [ROADMAP.md](./ROADMAP.md) pour le détail par bloc.
 
-Restant : #37 (skeleton), #23 (responsive), #24 (tests device), #26 (animation rotation), #28 (audit sécurité), #29 (Expo Go QR), #30 (soutenance).
+Restant : #24 (tests device réel), #29 (Expo Go QR), #30 (soutenance).
 
 ## Project board
 

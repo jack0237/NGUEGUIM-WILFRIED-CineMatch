@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Dimensions,
-  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,9 +17,6 @@ import { Input } from '@/components/Input';
 import { Stitch } from '@/constants/theme';
 import { useColors } from '@/hooks/use-theme';
 import { supabase } from '@/services/supabase';
-
-const HERO_URI =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuBiB4v--saynh5QTQhc4wSCoDVF9BAE26400WY04nvmfTePKHCUn1SIPYFEFCZhNlh0jOK6aKe4gpVWC36JGBXcVeES_Rf--IPnZzdtvImzArQzvd6OyuOz8-nybUNnUHGsmqb1rPUYKHKussU30iv453hkUgisajyBWaJNl1CtIyV-hNqgSPvx05aPxucB9ZJGxBSo68HDk6IstplbDyNupgasWmohO2SibaHYKID1YxJaV7LLG1Toh1AgDZLCiQHlzRy9jEE7f_I';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 const HERO_H = Math.min(353, Math.floor(SCREEN_H * 0.42));
@@ -52,18 +48,18 @@ export default function LoginScreen() {
 
   return (
     <View style={[s.root, { backgroundColor: C.bg }]}>
-      {/* ── Hero image (top ~40%) ── */}
-      <ImageBackground source={{ uri: HERO_URI }} style={s.hero} resizeMode="cover">
+      {/* ── Hero (top ~40%) — dégradé cinématique local ── */}
+      <View style={[s.hero, { backgroundColor: Stitch.surfaceContainerLowest }]}>
         <LinearGradient
-          colors={['rgba(19,19,19,0.4)', 'rgba(19,19,19,0.6)', C.bg]}
-          locations={[0, 0.5, 1]}
+          colors={[Stitch.primaryContainer, Stitch.background]}
+          locations={[0, 1]}
           style={StyleSheet.absoluteFill}
         />
         <View style={[s.brand, { paddingTop: insets.top }]}>
           <Text style={[s.brandTitle, { color: C.textPrimary }]}>CineMatch</Text>
           <Text style={[s.brandTagline, { color: C.textSecondary }]} numberOfLines={2}>Discover your next favorite film.</Text>
         </View>
-      </ImageBackground>
+      </View>
 
       {/* ── Glass panel ── */}
       <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

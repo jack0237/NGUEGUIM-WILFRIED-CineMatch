@@ -242,6 +242,17 @@ export default function SwipeScreen() {
           marginTop={0}
           marginBottom={SCREEN_HEIGHT - deckHeight}
           containerStyle={styles.swiperContainer}
+          // ── Rotation calibrée ±15° (Tinder-like) ──────────────────────────
+          inputRotationRange={[-(SCREEN_WIDTH / 2), 0, SCREEN_WIDTH / 2]}
+          outputRotationRange={['-15deg', '0deg', '15deg']}
+          // ── Spring physics pour le retour au centre si swipe annulé ───────
+          topCardResetAnimationFriction={7}
+          topCardResetAnimationTension={40}
+          // ── Spring pour l'animation de la carte suivante ──────────────────
+          stackAnimationFriction={7}
+          stackAnimationTension={40}
+          // ── Seuil d'apparition des overlays LIKE/NOPE ─────────────────────
+          overlayOpacityHorizontalThreshold={SCREEN_WIDTH * 0.2}
           animateOverlayLabelsOpacity
           overlayLabels={{
             left: {
