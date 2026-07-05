@@ -111,15 +111,6 @@ EXPO_PUBLIC_TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p
 3. Copier **Project URL** → `EXPO_PUBLIC_SUPABASE_URL`
 4. Copier **anon public** key → `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 
-### 5. Appliquer les migrations Supabase
-
-Dans le **SQL Editor** de votre projet Supabase, exécuter le fichier :
-
-```text
-supabase/migrations/20260705000001_group_matching.sql
-```
-
-Ce script crée les tables `groups`, `group_members`, `group_swipes` avec RLS, et les fonctions RPC nécessaires à la feature de group matching.
 
 ### 5. Lancer l'app
 
@@ -181,15 +172,7 @@ assets/                  # Images et icônes
 | `EXPO_PUBLIC_TMDB_BASE_URL`       | Base URL TMDB          | Voir `.env.example`       |
 | `EXPO_PUBLIC_TMDB_IMAGE_BASE_URL` | Base URL images TMDB   | Voir `.env.example`       |
 
-> Ne jamais committer le fichier `.env`. Il est dans `.gitignore`.
-
 ---
-
-## Progression
-
-**35 / 38 issues terminées** — voir [ROADMAP.md](./ROADMAP.md) pour le détail par bloc.
-
-Restant : #24 (tests device réel), #29 (Expo Go QR), #30 (soutenance).
 
 ## Project board
 
