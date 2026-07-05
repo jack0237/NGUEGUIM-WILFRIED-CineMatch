@@ -48,7 +48,11 @@ export default function RegisterScreen() {
     }
     setError('');
     setLoading(true);
-    const { error: authError } = await supabase.auth.signUp({ email, password });
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: 'cinematch://auth/callback' },
+    });
     setLoading(false);
     if (authError) {
       setError(authError.message);

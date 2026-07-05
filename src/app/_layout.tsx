@@ -39,9 +39,10 @@ export default function RootLayout() {
   useEffect(() => {
     if (auth.isLoading || !fontsLoaded) return;
     const inAuthGroup = segments[0] === '(auth)';
+    const isCallback = segments[1] === 'callback';
     if (!auth.session && !inAuthGroup) {
       router.replace('/(auth)/login');
-    } else if (auth.session && inAuthGroup) {
+    } else if (auth.session && inAuthGroup && !isCallback) {
       router.replace('/(tabs)/swipe');
     }
   }, [auth.session, auth.isLoading, fontsLoaded, segments]);
