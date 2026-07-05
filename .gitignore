@@ -44,3 +44,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local prep docs (not for the repo)
+SOUTENANCE.md
+note.md
